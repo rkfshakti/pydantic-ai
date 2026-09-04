@@ -43,10 +43,11 @@ models:
 max-ai-credits: -1
 engine:
   id: copilot
-  # Free Copilot tier (free_limited_copilot) has 0 premium interactions —
-  # 'auto' resolves to claude-sonnet-5 (premium) and 400s. Pin the cheapest
-  # alias: haiku -> gpt-5-mini -> gpt-5-nano -> gemini-flash-lite.
-  model: mini
+  # Free Copilot tier (free_limited_copilot) has 0 premium interactions.
+  # 'auto' -> claude-sonnet-5 and 'mini' -> claude-haiku-4.5 both 400
+  # ('The requested model is not supported'). Pin gpt-5-mini, the first
+  # non-premium model in the fallback chain.
+  model: gpt-5-mini
 safe-outputs:
   threat-detection:
     # Detection has an independent budget and the same unknown-model constraint.
