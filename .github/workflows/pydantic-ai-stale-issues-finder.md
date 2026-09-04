@@ -37,20 +37,7 @@ network:
 runtimes:
   uv: {}
 engine:
-  id: claude
-  # Pulled from the repo's `vars.GH_AW_MODEL` (set out-of-band).
-  # gh-aw compiles this into the engine command's `--model <name>` argv,
-  # which the harness reads via `args.model`.
-  model: ${{ vars.GH_AW_MODEL }}
-  # The checked-out workspace is mounted no-exec in the AWF sandbox, so a
-  # pre-step stages a launcher in gh-aw's exec-able /tmp/gh-aw/bin that runs
-  # `uv run --script` against the workspace harness.
-  command: /tmp/gh-aw/bin/pydantic-ai-runner-launch
-  env:
-    ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
-    ANTHROPIC_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
-    # The custom shim is stateless, so an outer retry repeats the whole task.
-    GH_AW_HARNESS_MAX_RETRIES: "0"
+  id: copilot
 tools:
   github:
     mode: gh-proxy
@@ -76,12 +63,7 @@ safe-outputs:
     max-ai-credits: -1
     # Detection uses the stateful Claude CLI, so it retains normal recovery.
     engine:
-      id: claude
-      model: ${{ vars.GH_AW_MODEL }}
-      env:
-        ANTHROPIC_BASE_URL: https://api.minimax.io/anthropic
-        ANTHROPIC_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
-        GH_AW_HARNESS_MAX_RETRIES: "3"
+      id: copilot
 timeout-minutes: 60
 env:
   # Must equal `timeout-minutes` above. The shim subtracts teardown headroom from it
