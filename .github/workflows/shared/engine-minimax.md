@@ -44,10 +44,14 @@ max-ai-credits: -1
 engine:
   id: copilot
   # Free Copilot tier (free_limited_copilot) has 0 premium interactions.
-  # 'auto' -> claude-sonnet-5 and 'mini' -> claude-haiku-4.5 both 400
-  # ('The requested model is not supported'). Pin gpt-5-mini, the first
-  # non-premium model in the fallback chain.
-  model: gpt-5-mini
+  # The alias keys 'auto'/'mini'/'gpt-5-mini' all resolve to premium
+  # models (claude-sonnet-5, claude-haiku-4.5, gpt-5.4-mini) that 400
+  # with 'The requested model is not supported'. 'copilot/auto' is NOT an
+  # alias key, so the resolver passes it through and normalizes it to
+  # 'auto' for the Copilot CLI, which then uses its native Auto mode and
+  # dynamically selects a model available to the subscription (verified
+  # working on the free tier).
+  model: copilot/auto
 safe-outputs:
   threat-detection:
     # Detection has an independent budget and the same unknown-model constraint.
