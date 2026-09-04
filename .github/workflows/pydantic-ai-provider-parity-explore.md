@@ -2,7 +2,7 @@
 emoji: "🧭"
 name: "Pydantic AI Provider Parity Explore"
 description: "Explore one cross-cutting capability's support across all providers and file an issue for concrete parity gaps. Runs on the Pydantic AI gh-aw shim; the prompt is iterable from a Logfire managed variable."
-on: weekly on tuesday
+on: workflow_dispatch
 permissions:
   contents: read
   issues: read

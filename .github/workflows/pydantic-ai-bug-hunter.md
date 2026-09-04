@@ -2,7 +2,7 @@
 emoji: "🐛"
 name: "Pydantic AI Bug Hunter"
 description: "Find a reproducible, user-impacting bug in pydantic-ai and file a report issue. Runs on the Pydantic AI gh-aw shim; the task prompt is iterable from a Logfire managed variable."
-on: weekly on thursday
+on: workflow_dispatch
 permissions:
   contents: read
   issues: read
