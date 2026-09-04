@@ -51,7 +51,7 @@ engine:
   model: minimax-m3
   env:
     COPILOT_PROVIDER_BASE_URL: https://ollama.com/v1
-    COPILOT_PROVIDER_BEARER_TOKEN: ${{ secrets.OLLAMA_API_KEY }}
+    COPILOT_PROVIDER_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
 safe-outputs:
   threat-detection:
     # Detection has an independent budget and the same unknown-model constraint.
