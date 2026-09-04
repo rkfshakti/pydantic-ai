@@ -2,7 +2,7 @@
 emoji: "🌊"
 name: "Pydantic AI Streaming Resilience Sweep"
 description: "Audit the streaming state machine for ordering/lifecycle bugs and file a reproducible report. Runs on the Pydantic AI gh-aw shim; the prompt is iterable from a Logfire managed variable."
-on: weekly on saturday
+on: workflow_dispatch
 permissions:
   contents: read
   issues: read

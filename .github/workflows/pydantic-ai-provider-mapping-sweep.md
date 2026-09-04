@@ -2,7 +2,7 @@
 emoji: "🔌"
 name: "Pydantic AI Provider Mapping Sweep"
 description: "Audit one model provider's request/response mapping against its SDK and file a reproducible bug. Rotates providers; runs on the Pydantic AI gh-aw shim; the prompt is iterable from a Logfire managed variable."
-on: weekly on monday
+on: workflow_dispatch
 permissions:
   contents: read
   issues: read
