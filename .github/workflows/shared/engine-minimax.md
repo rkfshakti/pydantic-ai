@@ -43,15 +43,15 @@ models:
 max-ai-credits: -1
 engine:
   id: copilot
-  # Free Copilot tier (free_limited_copilot) has 0 premium interactions.
-  # The alias keys 'auto'/'mini'/'gpt-5-mini' all resolve to premium
-  # models (claude-sonnet-5, claude-haiku-4.5, gpt-5.4-mini) that 400
-  # with 'The requested model is not supported'. 'copilot/auto' is NOT an
-  # alias key, so the resolver passes it through and normalizes it to
-  # 'auto' for the Copilot CLI, which then uses its native Auto mode and
-  # dynamically selects a model available to the subscription (verified
-  # working on the free tier).
-  model: copilot/auto
+  # BYOK: route Copilot CLI inference to Ollama Cloud's OpenAI-compatible
+  # endpoint (minimax-m3, verified HTTP 200 with the repo's OLLAMA_API_KEY).
+  # BYOK needs no GitHub Copilot subscription — the CLI authenticates to the
+  # provider directly. COPILOT_PROVIDER_BASE_URL is a compile-time literal
+  # so gh-aw adds ollama.com to the AWF allow-list automatically.
+  model: minimax-m3
+  env:
+    COPILOT_PROVIDER_BASE_URL: https://ollama.com/v1
+    COPILOT_PROVIDER_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
 safe-outputs:
   threat-detection:
     # Detection has an independent budget and the same unknown-model constraint.
