@@ -111,18 +111,36 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      # Fork-safety: the classify step runs claude-code-action, which hard-fails
+      # at env validation without an Anthropic credential. A fork (or any repo)
+      # without CLAUDE_CODE_API_KEY/ANTHROPIC_API_KEY skips the LLM classification
+      # instead of posting a red check on every PR; the category-apply job keys
+      # off the same output, so nothing further runs.
+      - name: Check LLM credential
+        id: check-cred
+        env:
+          CLAUDE_KEY: ${{ secrets.CLAUDE_CODE_API_KEY }}
+          ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$CLAUDE_KEY" ] || [ -n "$ANTHROPIC_KEY" ]; then
+            echo "has_llm_key=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No Anthropic credential — skipping LLM category classification."
+            echo "has_llm_key=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout repository
-        if: steps.check-label.outputs.has_label == 'false'
+        if: steps.check-label.outputs.has_label == 'false' && steps.check-cred.outputs.has_llm_key == 'true'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
       - name: Install bubblewrap
-        if: steps.check-label.outputs.has_label == 'false'
+        if: steps.check-label.outputs.has_label == 'false' && steps.check-cred.outputs.has_llm_key == 'true'
         run: sudo apt-get install -y bubblewrap
 
       - name: Classify PR with Claude Code
-        if: steps.check-label.outputs.has_label == 'false'
+        if: steps.check-label.outputs.has_label == 'false' && steps.check-cred.outputs.has_llm_key == 'true'
         id: classify
         uses: anthropics/claude-code-action@428971d2ecd6e3a7cb0ee0da2a3a8b33fdb3678d # v1.0.157
         env:
@@ -154,7 +172,7 @@ jobs:
             Return your classification as JSON with a "category" field set to one of: bug, feature, docs, chore, dependency.
 
       - name: Extract and validate category
-        if: steps.check-label.outputs.has_label == 'false'
+        if: steps.check-label.outputs.has_label == 'false' && steps.check-cred.outputs.has_llm_key == 'true'
         id: extract
         run: |
           CATEGORY=$(echo "$STRUCTURED_OUTPUT" | jq -r .category | tr -d '[:space:]')
