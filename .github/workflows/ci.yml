@@ -251,7 +251,15 @@ jobs:
         run: |
           # Exclude the tag being built: once its GitHub release exists, `gh release view`
           # would otherwise compare the release to itself and make this gate a no-op.
-          release_tag=$(gh release list --repo pydantic/pydantic-ai --limit 20 \
+          release_repo=pydantic/pydantic-ai
+          if [ "$GITHUB_REPOSITORY" != "$release_repo" ]; then
+            # Fork-safety: the baseline release list comes from upstream, but a fork's
+            # origin never carries upstream's release tags — fetch from upstream instead.
+            tag_remote=https://github.com/${release_repo}.git
+          else
+            tag_remote=origin
+          fi
+          release_tag=$(gh release list --repo "$release_repo" --limit 20 \
             --exclude-drafts --exclude-pre-releases --json tagName \
             | jq -r --arg current "$GITHUB_REF_NAME" \
               'map(select(.tagName != $current))[0].tagName // empty')
@@ -259,7 +267,7 @@ jobs:
             echo '::error::Could not find a prior stable release for the API compatibility baseline.'
             exit 1
           fi
-          git fetch --depth=1 origin tag "$release_tag"
+          git fetch --depth=1 "$tag_remote" tag "$release_tag"
           uv run python .github/scripts/check_api_compatibility.py --against "$release_tag"
 
       - run: uv build --all-packages --no-sources
