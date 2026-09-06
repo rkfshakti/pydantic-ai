@@ -689,6 +689,56 @@ jobs:
     assert check_compiled_runner_contract(lock) == []
 
 
+def test_compiled_runner_contract_accepts_the_managed_copilot_engine(tmp_path: Path):
+    """A gh-aw-managed Copilot engine never calls the shim, so there is no seam to check.
+
+    The Copilot BYOK engine (Ollama Cloud) replaced the shim on this fork: gh-aw
+    invokes `copilot_harness.cjs` directly, and the Anthropic-protocol shim cannot
+    serve an OpenAI-compatible endpoint. The contract check must not demand a
+    `pydantic-ai-runner-launch` invocation the architecture no longer has.
+    """
+    lock = _write(
+        tmp_path / 'w.lock.yml',
+        """
+jobs:
+  agent:
+    steps:
+      - name: Execute GitHub Copilot CLI
+        run: >-
+          awf -- /bin/bash -c '"$GH_AW_NODE_EXEC" "${RUNNER_TEMP}/gh-aw/actions/copilot_harness.cjs"
+          "${RUNNER_TEMP}/gh-aw/bin/copilot" --prompt-file /tmp/gh-aw/aw-prompts/prompt.txt'
+""",
+    )
+
+    assert check_compiled_runner_contract(lock) == []
+
+
+def test_compiled_runner_contract_still_checks_shim_arguments_when_the_shim_is_present(
+    tmp_path: Path,
+):
+    """A lock that still stages the shim keeps the full argument contract enforced."""
+    lock = _write(
+        tmp_path / 'w.lock.yml',
+        """
+jobs:
+  agent:
+    steps:
+      - name: Stage Pydantic AI gh-aw shim launcher
+        run: |
+          install -m 755 .github/scripts/pydantic-ai-runner-launch.sh /tmp/gh-aw/bin/pydantic-ai-runner-launch
+      - name: Run agent
+        run: >-
+          awf -- /bin/bash -c '/tmp/gh-aw/bin/pydantic-ai-runner-launch
+          --allowed-tools "Read,mcp__safeoutputs"'
+""",
+    )
+
+    violations = check_compiled_runner_contract(lock)
+
+    assert [v.check for v in violations] == ['compiled-runner-contract']
+    assert '`--output-format stream-json`' in violations[0].message
+
+
 # --- AWF binary pin (the #8041 skew) ------------------------------------------
 
 _AWF_LOCK = """

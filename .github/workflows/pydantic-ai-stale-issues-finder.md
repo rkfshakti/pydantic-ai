@@ -38,6 +38,9 @@ runtimes:
   uv: {}
 engine:
   id: copilot
+  env:
+    # The Ollama BYOK engine is stateless; an outer retry repeats the whole task.
+    GH_AW_HARNESS_MAX_RETRIES: "0"
 tools:
   github:
     mode: gh-proxy
@@ -61,9 +64,11 @@ safe-outputs:
   threat-detection:
     # Detection's separate AWF config does not inherit the model pricing below.
     max-ai-credits: -1
-    # Detection uses the stateful Claude CLI, so it retains normal recovery.
+    # Detection uses the stateful CLI, so it retains normal recovery.
     engine:
       id: copilot
+      env:
+        GH_AW_HARNESS_MAX_RETRIES: "3"
 timeout-minutes: 60
 env:
   # Must equal `timeout-minutes` above. The shim subtracts teardown headroom from it
@@ -98,7 +103,7 @@ pre-steps:
   # which also drops the bundled AWF firewall binary install. Re-run gh-aw's
   # own installer (the same call it makes for non-custom-command jobs).
   - name: Install AWF firewall binary (skipped by custom engine.command)
-    run: bash "${RUNNER_TEMP}/gh-aw/actions/install_awf_binary.sh" v0.27.44
+    run: bash "${RUNNER_TEMP}/gh-aw/actions/install_awf_binary.sh" v0.28.12
 
 pre-agent-steps:
   # Stage the committed launcher script at gh-aw's exec-able

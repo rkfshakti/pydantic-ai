@@ -52,11 +52,15 @@ engine:
   env:
     COPILOT_PROVIDER_BASE_URL: https://ollama.com/v1
     COPILOT_PROVIDER_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+    # The Ollama BYOK engine is stateless; an outer retry repeats the whole task.
+    GH_AW_HARNESS_MAX_RETRIES: "0"
 safe-outputs:
   threat-detection:
     # Detection has an independent budget and the same unknown-model constraint.
     max-ai-credits: -1
-    # Detection uses the stateful Claude CLI, so it retains normal recovery.
+    # Detection uses the stateful CLI, so it retains normal recovery.
     engine:
       id: copilot
+      env:
+        GH_AW_HARNESS_MAX_RETRIES: "3"
 ---
