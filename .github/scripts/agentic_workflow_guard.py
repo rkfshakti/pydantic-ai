@@ -392,38 +392,8 @@ def check_compiler_versions(locks: list[Path]) -> list[Violation]:
     ]
 
 
-def check_compiled_runner_contract(lock: Path) -> list[Violation]:
-    """The generated agent command must retain the interface our runner implements."""
-    workflow = _as_mapping(yaml.safe_load(lock.read_text(encoding='utf-8')))
-    agent = _as_mapping(_as_mapping(workflow.get('jobs')).get('agent'))
-    steps = agent.get('steps')
-    commands: list[list[str]] = []
-    for raw_step in cast(list[Any], steps) if isinstance(steps, list) else []:
-        run = _as_mapping(raw_step).get('run')
-        if not isinstance(run, str) or 'pydantic-ai-runner-launch' not in run:
-            continue
-        with suppress(ValueError):
-            outer_arguments = shlex.split(run)
-            for index, argument in enumerate(outer_arguments[:-1]):
-                if argument != '-c' or 'pydantic-ai-runner-launch' not in outer_arguments[index + 1]:
-                    continue
-                with suppress(ValueError):
-                    inner_arguments = shlex.split(outer_arguments[index + 1])
-                    for runner_index, inner_argument in enumerate(inner_arguments):
-                        if inner_argument.endswith('/pydantic-ai-runner-launch'):
-                            commands.append(inner_arguments[runner_index:])
-    if len(commands) != 1:
-        return [
-            Violation(
-                str(lock),
-                'compiled-runner-contract',
-                'the `agent` job must contain exactly one invocation of '
-                '`pydantic-ai-runner-launch`. The custom runner is the compatibility '
-                'boundary between gh-aw and Pydantic AI.',
-            )
-        ]
-
-    command = commands[0]
+def _shim_argument_violations(lock: Path, command: list[str]) -> list[Violation]:
+    """The single shim invocation must carry the interface the runner implements."""
     missing: list[str] = []
     if '--output-format' not in command or command.index('--output-format') == len(command) - 1:
         missing.append('`--output-format stream-json`')
@@ -445,6 +415,53 @@ def check_compiled_runner_contract(lock: Path) -> list[Violation]:
             'Recompiling changed the gh-aw interface that the custom runner implements.',
         )
     ]
+
+
+def check_compiled_runner_contract(lock: Path) -> list[Violation]:
+    """The generated agent command must retain the interface our runner implements.
+
+    The gh-aw-managed Copilot engine (`engine.id: copilot`) invokes gh-aw's own
+    `copilot_harness.cjs` instead of the custom runner, so the shim contract has
+    nothing to enforce on such locks; any other engine without a shim invocation
+    is an unknown seam and still fails.
+    """
+    workflow = _as_mapping(yaml.safe_load(lock.read_text(encoding='utf-8')))
+    agent = _as_mapping(_as_mapping(workflow.get('jobs')).get('agent'))
+    steps = agent.get('steps')
+    commands: list[list[str]] = []
+    managed_engine = False
+    for raw_step in cast(list[Any], steps) if isinstance(steps, list) else []:
+        run = _as_mapping(raw_step).get('run')
+        if not isinstance(run, str):
+            continue
+        if 'copilot_harness.cjs' in run:
+            managed_engine = True
+        if 'pydantic-ai-runner-launch' not in run:
+            continue
+        with suppress(ValueError):
+            outer_arguments = shlex.split(run)
+            for index, argument in enumerate(outer_arguments[:-1]):
+                if argument != '-c' or 'pydantic-ai-runner-launch' not in outer_arguments[index + 1]:
+                    continue
+                with suppress(ValueError):
+                    inner_arguments = shlex.split(outer_arguments[index + 1])
+                    for runner_index, inner_argument in enumerate(inner_arguments):
+                        if inner_argument.endswith('/pydantic-ai-runner-launch'):
+                            commands.append(inner_arguments[runner_index:])
+    if managed_engine:
+        return []
+    if len(commands) != 1:
+        return [
+            Violation(
+                str(lock),
+                'compiled-runner-contract',
+                'the `agent` job must contain exactly one invocation of '
+                '`pydantic-ai-runner-launch`. The custom runner is the compatibility '
+                'boundary between gh-aw and Pydantic AI.',
+            )
+        ]
+
+    return _shim_argument_violations(lock, commands[0])
 
 
 def check_awf_binary_version(lock: Path) -> list[Violation]:
