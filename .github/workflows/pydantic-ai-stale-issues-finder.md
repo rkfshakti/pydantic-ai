@@ -93,6 +93,10 @@ imports:
   - shared/repo-context.md
   - shared/rigor.md
   - shared/provider-health.md
+  # No shared/engine-zai.md here, fork-only: this workflow runs dispatch-only on the
+  # copilot BYOK engine (no repo ZAI_API_KEY), so it is not a Z.AI-backed workflow —
+  # importing the engine would both demand a credential it cannot have and trip the
+  # 'multiple engine fields' compile error against the inline copilot spec.
 pre-steps:
   # Setting engine.command makes gh-aw skip ALL engine installation steps,
   # which also drops the bundled AWF firewall binary install. Re-run gh-aw's

@@ -15,9 +15,12 @@ on:
       - Pydantic AI Provider Parity Explore
       - Pydantic AI Regression Detector
       - Pydantic AI Round-Trip Sweep
-      - Pydantic AI Stale Issues Finder
       - Pydantic AI Streaming Resilience Sweep
       - Pydantic AI UI Security Review
+      # 'Pydantic AI Stale Issues Finder' is the one Z.AI workflow excluded here, fork-only:
+      # the fork runs it dispatch-only on the copilot BYOK engine (no shared engine), so it is
+      # not a Z.AI-backed workflow (agentic_workflow_guard._is_zai_workflow excludes it) —
+      # mirroring it into this list turns the monitor-list policy check red.
     types: [completed]
   schedule:
     - cron: '13 */6 * * *'
