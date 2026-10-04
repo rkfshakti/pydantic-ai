@@ -9,8 +9,16 @@ name: Sandbox live nightly
 # out another ref from a run on `main` would let untested code write to `main`'s cache.
 
 on:
-  schedule:
-    - cron: "17 4 * * *"
+  # Fork-only: the daily schedule is stripped. Every scheduled provider (`all`)
+  # opens a billed sandbox through a control plane keyed on MODAL_TOKEN_ID /
+  # E2B_API_KEY / SPRITE_TOKEN, and this fork holds none of them — the
+  # REQUIRE_LIVE contract turns that into a red run and a repeated failure
+  # issue every day. Manual dispatch remains: pass a provider list the caller
+  # owns.
+  #   workflow_dispatch:
+  #     inputs:
+  #       providers:
+  #         default: all
   workflow_dispatch:
     inputs:
       providers:
